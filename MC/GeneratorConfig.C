@@ -214,6 +214,8 @@ AliGenerator *GeneratorEPOSLHC(Bool_t pileup = kFALSE);
 AliGenerator *GeneratorHijing();
 AliGenerator *Generator_Jpsiee(const Char_t *params, Float_t jpsifrac, Float_t lowfrac, Float_t highfrac, Float_t bfrac, Bool_t useEvtGenForB=kFALSE);
 AliGenerator *Generator_JpsiEtaToProton(const Char_t *params, Float_t jpsifrac, Float_t etafrac);
+//AliGenerator *Generator_JpsiToLLbar(const Char_t *params, Float_t jpsifrac);
+AliGenerator *Generator_JpsiToLLbar(const Char_t *params, Float_t jpsifrac, Float_t bfrac, Bool_t useEvtGenForB);
 AliGenerator *Generator_Nuclex(UInt_t injbit, Bool_t antiparticle, Int_t ninj, Float_t max_pt = 10.f, Float_t max_y = 1.);
 AliGenerator *GeneratorStarlight();
 AliGenerator *GeneratorDRgen();
@@ -1196,11 +1198,15 @@ GeneratorStarlight(){
   // kTwoGammaToRhoRho
   // kTwoGammaToF2
   // kCohRhoToPi
+  // kCohRhoToElEl
+  // kCohRhoToMuMu
   // kCohRhoToPiWithCont
   // kCohRhoToPiFlat
   // kCohPhiToKa
+  // kDirectPhiToKaKa
   // kCohOmegaTo2Pi
   // kCohOmegaTo3Pi
+  // kCohOmegaToPiPiPi
   // kCohJpsiToMu
   // kCohJpsiToEl
   // kCohJpsiToElRad
@@ -1212,15 +1218,19 @@ GeneratorStarlight(){
   // kCohUpsilonToMu
   // kCohUpsilonToEl
   // kIncohRhoToPi
+  // kIncohRhoToElEl
+  // kIncohRhoToMuMu
   // kIncohRhoToPiWithCont
   // kIncohRhoToPiFlat
   // kIncohPhiToKa
   // kIncohOmegaTo2Pi
   // kIncohOmegaTo3Pi
+  // kIncohOmegaToPiPiPi
   // kIncohJpsiToMu
   // kIncohJpsiToEl
   // kIncohJpsiToElRad
   // kIncohJpsiToProton
+  // kIncohJpsiToLLbar
   // kIncohPsi2sToMu
   // kIncohPsi2sToEl
   // kIncohPsi2sToMuPi
@@ -1239,7 +1249,7 @@ GeneratorStarlight(){
   // there is a floating point exception in starlight
   yminConfig = TMath::Max(yminConfig, -8.0f);
   ymaxConfig = TMath::Min(ymaxConfig, +8.0f);
-  
+
   Int_t projA=1,targA=1,projZ=1,targZ=1;
   // pp
   if (systemConfig.EqualTo("p-p")) {
@@ -1272,7 +1282,7 @@ GeneratorStarlight(){
   Float_t gamma1  = beam1energy/0.938272;
   Float_t gamma2  = beam2energy/0.938272;
   Float_t rapBoost = 0.5*(TMath::ACosH(gamma2)-TMath::ACosH(gamma1));
-  
+
   // maximum absolute rapidity in CMS used in genuine starlight parameters 
   // rapidity bins are calculated wrt (-rapMax,rapMax) interval
   Float_t rapMax = TMath::Max(TMath::Abs(yminConfig+rapBoost),TMath::Abs(ymaxConfig+rapBoost));
@@ -1283,7 +1293,7 @@ GeneratorStarlight(){
   cocktail |= processConfig.Contains("RhoPrime");
   cocktail |= processConfig.Contains("OmegaTo3Pi");
   cocktail |= processConfig.Contains("JpsiToElRad");
-  
+
   AliGenCocktail *genCocktail = NULL;
   if (cocktail)  genCocktail = new AliGenCocktail(); // constructor must be called before other generators
 
@@ -1305,11 +1315,15 @@ GeneratorStarlight(){
     {"kTwoGammaToRhoRho",    1,      33,   20, -1.0, -1.0, 0.01 }, //
     {"kTwoGammaToF2",        1,     225,   20, -1.0, -1.0, 0.01 }, //
     {"kCohRhoToPi",          3,     113, 1200, -1.0, -1.0, 0.02 }, //
+    {"kCohRhoToElEl",        3,  113011, 1200, -1.0, -1.0, 0.02 }, //
+    {"kCohRhoToMuMu",        3,  113013, 1200, -1.0, -1.0, 0.02 }, //
     {"kCohRhoToPiWithCont",  3,     913, 1200, -1.0, -1.0, 0.02 }, //
     {"kCohRhoToPiFlat",      3,     113,    1, -1.0,  2.5, 0.02 }, //
     {"kCohPhiToKa",          2,     333,   20, -1.0, -1.0, 0.01 }, //
+    {"kDirectPhiToKaKa",     3,     933,   20, -1.0, -1.0, 0.01 }, // new
     {"kCohOmegaTo2Pi",       2,     223,   20, -1.0, -1.0, 0.01 }, //
     {"kCohOmegaTo3Pi",       2,     223,   20, -1.0, -1.0, 0.01 }, //
+    {"kCohOmegaToPiPiPi",    2, 223211111, 20, -1.0, -1.0, 0.01 }, // not using the PYTHIA decayer
     {"kCohJpsiToMu",         2,  443013,   20, -1.0, -1.0, 0.01 }, //
     {"kCohJpsiToEl",         2,  443011,   20, -1.0, -1.0, 0.01 }, //
     {"kCohJpsiToElRad",      2,  443011,   20, -1.0, -1.0, 0.01 }, //
@@ -1321,15 +1335,19 @@ GeneratorStarlight(){
     {"kCohUpsilonToMu",      2,  553013,   20, -1.0, -1.0, 0.01 }, //
     {"kCohUpsilonToEl",      2,  553011,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohRhoToPi",        4,     113, 1200, -1.0, -1.0, 0.02 }, //
+    {"kIncohRhoToElEl",      4,  113011, 1200, -1.0, -1.0, 0.02 }, //
+    {"kIncohRhoToMuMu",      4,  113013, 1200, -1.0, -1.0, 0.02 }, //
     {"kIncohRhoToPiWithCont",4,     913, 1200, -1.0, -1.0, 0.02 }, //
     {"kIncohRhoToPiFlat",    4,     113,    1, -1.0,  2.5, 0.02 }, //
     {"kIncohPhiToKa",        4,     333,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohOmegaTo2Pi",     4,     223,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohOmegaTo3Pi",     4,     223,   20, -1.0, -1.0, 0.01 }, //
+    {"kIncohOmegaToPiPiPi",  4, 223211111, 20, -1.0, -1.0, 0.01 }, // not using the PYTHIA decayer
     {"kIncohJpsiToMu",       4,  443013,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohJpsiToEl",       4,  443011,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohJpsiToElRad",    4,  443011,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohJpsiToProton",   4, 4432212,   20, -1.0, -1.0, 0.01 }, //
+    {"kIncohJpsiToLLbar",    4, 4433122,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohPsi2sToMu",      4,  444013,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohPsi2sToEl",      4,  444011,   20, -1.0, -1.0, 0.01 }, //
     {"kIncohPsi2sToMuPi",    4,  444013,   20, -1.0, -1.0, 0.01 }, //
@@ -1339,6 +1357,7 @@ GeneratorStarlight(){
  // {"kCohRhoPrime",         3,      0,   20,  -1.0, -1.0, 0.01 }, //
  // {"kIncohRhoPrime",       4,      0,   20,  -1.0, -1.0, 0.01 }, //
   };
+
   const Int_t nProcess = sizeof(slConfig)/sizeof(SLConfig);
   Int_t idx = -1;
   for (Int_t i=0; i<nProcess; ++i) {
@@ -1352,7 +1371,7 @@ GeneratorStarlight(){
     printf("STARLIGHT process '%s' is not supported\n", processConfig.Data());
     abort();
   }
-  
+
   AliGenStarLight* genStarLight = new AliGenStarLight(1000*1000);
   genStarLight->SetParameter(Form("BEAM_1_Z     =    %3i    #Z of target",targZ));
   genStarLight->SetParameter(Form("BEAM_1_A     =    %3i    #A of target",targA));
@@ -1384,7 +1403,7 @@ GeneratorStarlight(){
   genStarLight->SetParameter("BSLOPE_VALUE      = 4.0"); // default slope value
   if(genStarLight->Class_Version() > 3) // this option is only in later versions
     genStarLight->SetParameter("PRINT_VM = 2"); // print cross sections and fluxes vs rapidity in stdout for VM photoproduction processes
-  
+
   genStarLight->SetRapidityMotherRange(yminConfig,ymaxConfig);
   if (!genCocktail) return genStarLight;
 
@@ -1701,6 +1720,71 @@ Generator_JpsiEtaToProton(const Char_t *params, Float_t jpsifrac, Float_t etafra
   gener->AddGenerator(gene, "EvtGen", 1.);
   //
   return gener;
+}
+
+/*** JPSI ->LLbar **************************************************/
+
+AliGenerator *
+Generator_JpsiToLLbar(const Char_t *params, Float_t jpsifrac, Float_t bfrac, Bool_t useEvtGenForB)
+{
+        //gSystem->Load("libPhotos");
+        gSystem->Load("libEvtGen");
+        gSystem->Load("libEvtGenExternal");
+        gSystem->Load("libTEvtGen");
+
+	TVirtualMCDecayer* decayer = new AliDecayerPythia();
+        decayer->SetForceDecay(kAll);
+        decayer->Init();
+        gMC->SetExternalDecayer(decayer);
+        comment = comment.Append(Form(" | J/psi -> L L-bar (%s, %.1f/%.1f)", params));
+        AliGenCocktail *gener = new AliGenCocktail();
+        gener->UsePerEventRates();
+
+	TString stringParams = params;
+  	AliGenParam* jpsi    = NULL;
+  	if(stringParams.Contains("UserParam")){
+	#if defined(__CINT__)
+		gROOT->LoadMacro("$ALIDPG_ROOT/MC/CustomGenerators/PWGDQ/GenJPsiParaSet.C++");
+	#endif
+   	jpsi = GenJPsiParaSet(stringParams);
+  	}
+  	else jpsi = new AliGenParam(1, AliGenMUONlib::kJpsi, params, "Jpsi");
+
+	jpsi->SetPtRange(0., 1000.);
+        jpsi->SetYRange(-1.0, 1.0);
+        jpsi->SetPhiRange(0., 360.);
+        jpsi->SetForceDecay(kNoDecay);
+
+	AliGenPythia *pythia = new AliGenPythia(-1);
+  	pythia->SetMomentumRange(0, 999999.);
+  	pythia->SetThetaRange(0., 180.);
+  	pythia->SetYRange(-2., 2.);
+  	pythia->SetPtRange(0, 1000.);
+  	pythia->SetProcess(kPyBeautyppMNRwmi);
+  	pythia->SetEnergyCMS(energyConfig);
+  	pythia->SetTune(kPythia6Tune_Perugia0);
+  	pythia->UseNewMultipleInteractionsScenario();
+ 	if(useEvtGenForB) pythia->SetForceDecay(kNoDecayBeauty);
+  	else {
+  	pythia->SetCutOnChild(1);
+  	pythia->SetPdgCodeParticleforAcceptanceCut(443);
+  	pythia->SetChildYRange(-2, 2);
+  	pythia->SetChildPtRange(0, 10000.);
+  	pythia->SetForceDecay(kBJpsiUndecayed);
+  	}
+  	pythia->SetStackFillOpt(AliGenPythia::kHeavyFlavor);
+
+	AliGenEvtGen *gene = new AliGenEvtGen();
+        gene->SetUserDecayTable(gSystem->ExpandPathName("$ALIDPG_ROOT/MC/CustomDecayTables/BTOJPSITOLLBAR.DEC"));
+        //gene->SetUserDecayTable(gSystem->ExpandPathName("$ALIDPG_ROOT/MC/CustomDecayTables/JPSITOLLBAR.DEC"));
+  	if(useEvtGenForB) gene->SetParticleSwitchedOff(AliGenEvtGen::kHFPart);
+  	else gene->SetParticleSwitchedOff(AliGenEvtGen::kCharmPart);
+
+  	if (jpsifrac > 0.) gener->AddGenerator(jpsi,           "JPsi",           jpsifrac);
+  	if (bfrac    > 0.) gener->AddGenerator(pythia,         "Pythia",         bfrac);
+  	gener->AddGenerator(gene, "EvtGen", 1.);
+	
+	return gener;
 }
 
 

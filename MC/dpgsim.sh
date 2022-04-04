@@ -65,6 +65,7 @@ function COMMAND_HELP(){
     echo "--keepTrackRefsFraction <percentage>      Percentage of subjobs that keeps the TrackRefs file"
     echo "--signalFilteringFraction <percentage>    Percentage of subjobs that use signal filtering (for embedding only)"
     echo "--material <densityFactor>                Modify material budget by a density factor"
+    echo "--its-material <densityFactor>            Modify its-only material budget following this syntaxt \"kSPDSiChip=1.2,kSPDSiSens=1.2,kSPDAlBus=1.2,kSPDCoolPipes=1.2,kSDDSiAll=1.12\""
     echo "--purifyKineOff                           Switch off the PurifyKine step in simulation" 
     echo "--fluka                                   Use FLUKA instead of GEANT3" 
     echo "--geant4                                  Use GEANT4 instead of GEANT3"
@@ -77,6 +78,7 @@ function COMMAND_HELP(){
     echo "--genopt                                  if using ALIGENMC as generator: optional arguments"
     echo "--tpcExtraDist                            apply extra CoverVoltage distortions in TPC simulation"
     echo "--cleanEsd <on|off>                       force cleanESD on/off for reconstruction, default is OFF for reconstructions done prior Dec,18 and ON after"
+    echo "--focalGeometryFile                       FOCAL geometry file"
     echo ""
     echo "Override automatic settings:"
     echo "--energy <energy>                         Centre-of-mass energy" 
@@ -243,6 +245,7 @@ CONFIG_FASTB=""
 CONFIG_VDT="on"
 CONFIG_CLEANUP="on"
 CONFIG_MATERIAL=""
+CONFIG_ITS_MATERIAL=""
 CONFIG_KEEPTRACKREFSFRACTION="0"
 CONFIG_REMOVETRACKREFS="off"
 CONFIG_SIGNALFILTERINGFRACTION="100"
@@ -250,6 +253,7 @@ CONFIG_SIGNALFILTERING="off"
 CONFIG_OCDBTIMESTAMP=""
 CONFIG_DEBUG=""
 CONFIG_CLEANESD=""
+CONFIG_FOCALGEOMETRYFILE=""
 
 RUNMODE=""
 
@@ -311,6 +315,13 @@ while [ ! -z "$1" ]; do
 #        shift
     elif [ "$option" = "--detector" ]; then
         CONFIG_DETECTOR="$1"
+        # check that FOCAL env is set in case we run a FOCAL simulation
+        if [ "$CONFIG_DETECTOR" = "FOCAL" ]; then
+            if [ -z "$FOCAL" ]; then
+                echo "FOCAL simulation requested but FOCAL environment not set."
+                exit 1
+            fi
+        fi
 	export CONFIG_DETECTOR
         shift
     elif [ "$option" = "--phostimeres" ]; then
@@ -462,6 +473,10 @@ while [ ! -z "$1" ]; do
         CONFIG_MATERIAL="$1"
 	export CONFIG_MATERIAL
         shift
+    elif [ "$option" = "--its-material" ]; then
+        CONFIG_ITS_MATERIAL="$1"
+        export CONFIG_ITS_MATERIAL
+        shift
     elif [ "$option" = "--geant4" ]; then
         CONFIG_GEANT4="on"
 	export CONFIG_GEANT4
@@ -506,6 +521,9 @@ while [ ! -z "$1" ]; do
 #	shift
     elif [ "$option" = "--cleanEsd" ]; then
         export CONFIG_CLEANESD="$1"
+        shift
+    elif [ "$option" = "--focalGeometryFile" ]; then
+        export CONFIG_FOCALGEOMETRYFILE="$1"
         shift
     fi
 done
@@ -892,6 +910,9 @@ echo "No. Events....... $CONFIG_NBKG"
 #echo "MC seed.......... $CONFIG_SEED (based on $CONFIG_SEED_BASED)"
 echo "============================================"
 echo "Detector......... $CONFIG_DETECTOR"
+if [ "$CONFIG_DETECTOR" = "FOCAL" ]; then
+echo "FOCAL geom file.. $CONFIG_FOCALGEOMETRYFILE"
+fi
 echo "PHOS Time Res.... $CONFIG_PHOS_TIMERES"
 echo "GEANT4........... $CONFIG_GEANT4"
 echo "GEANT4 Phy List.. $CONFIG_GEANT4PHYSLIST"
